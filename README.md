@@ -1,4 +1,4 @@
-This will deploy a cluster of three elastic nodes and a kibana to a docker swarm system.
+This will deploy a cluster of three elastic nodes and a kibana to a set of system in a docker swarm configuration.
 
 Each container is pinned to a different system.
 
@@ -20,13 +20,16 @@ Instructions:
 
 stack name is prepended to the volumes.
 
-* Generate the create-certs-full.yml config file
+Generate the create-certs-full.yml config file
+
 `/usr/local/bin/docker-compose -f create-certs.yml config > create-certs-full.yml`
 
-# Generate the certs, place in the ~CERTS_VOLUME_LOCATION=/jlastic/certs~ directory
-/usr/local/bin/docker-compose -f create-certs.yml run --rm create_certs
+Generate the certs, place in the ~CERTS_VOLUME_LOCATION=/jlastic/certs~ directory
 
-* .env files are note recognized with docker stack 
+`/usr/local/bin/docker-compose -f create-certs.yml run --rm create_certs`
+
+.env files are note recognized with docker stack 
+
 `docker stack deploy -c create-certs-.yml certstack`
 
 `/usr/local/bin/docker-compose -f create-certs.yml config`
@@ -38,12 +41,12 @@ push out to the other systems via scp
 run the swarm
 
 
-# Generating the kibana password and elastic user login.
+## Generating the kibana password and elastic user login.
 
-# This command will generate the password on the elastic node.
+## This command will generate the password on the elastic node.
 docker exec <es01-container-id> /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200"
 
-# For example 
+## For example 
 `
 docker exec es01 /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200"
 
