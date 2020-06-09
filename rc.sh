@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -xe
+set -x
 
 # The run command for this setup
 
@@ -37,6 +37,7 @@ generate_docker_compose_configs() {
 # generate the docker-compose files from our .env settings.
 $DOCKER_COMPOSE -f create-certs-template.yml config > create-certs.yml
 $DOCKER_COMPOSE -f elastic-docker-tls-template.yml config > elastic-docker-tls.yml
+$DOCKER_COMPOSE -f kibana-docker-tls-template.yml config > kibana-docker-tls.yml
 }
 
 generate_certs() {
@@ -63,7 +64,14 @@ done
 
 deploy_stack() {
 # deploy the stack
-docker stack deploy -c elastic-docker-tls.yml jlastic
+docker stack deploy -c elastic-docker-tls.yml $ELASTIC_STACK_NAME
+}
+
+deploy_kibana() {
+# deploy kibana stack
+docker stack deploy -c kibana-docker-tls.yml $KIBANA_STACK_NAME
+echo "Kibana deployed, wait 20 seconds for it to come up"
+echo "Try https://$MASTER_NODE_HOSTNAME:5601"
 }
 
 clean_remotes() {
@@ -78,6 +86,31 @@ for i in $SYSTEM_NAMES; do
 done
 }
 
+generate_network() {
+#  Create the overlay network used by stack and kibana
+docker network create --driver=overlay --attachable elastic
+}
+
+update_passwords() {
+#  Update the elastic passwords
+GOTPASS=1
+while [ $GOTPASS -ne 0 ]; do
+	docker exec `docker ps | grep es01| awk '{ print $1 }'` /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200" > $ELASTIC_STACK_NAME-passwords
+	GOTPASS=$?
+	if [ $GOTPASS -ne 0 ]; then
+		echo "Elastic password not changed yet, sleeping and trying again"
+		sleep 1
+	fi
+done
+	
+KIBANAPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep kibana | awk '{ print $4 }')
+ELASTICPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep elastic | awk '{ print $4 }')
+
+sed -i s/CHANGEME/$KIBANAPASS/ ./kibana-docker-tls.yml
+echo your kibana login  user:elastic  password:$ELASTICPASS
+
+}
+
 grab_remotes() {
 # Get the data directories of the remote elastic swarm directories
 DATADIR=data_`date +"%s"`
@@ -90,11 +123,19 @@ done
 remove_stack() {
 # Stop the stack and remove it
 docker stack rm $ELASTIC_STACK_NAME
+docker stack rm $KIBANA_STACK_NAME
+docker network rm elastic
 }
 
 case $1 in
   "deploy_stack")
     deploy_stack
+  ;;
+  "deploy_kibana")
+    deploy_kibana
+  ;;
+  "update_passwords")
+    update_passwords
   ;;
   "clean_remotes")
     clean_remotes
@@ -121,6 +162,9 @@ case $1 in
   "grab_remotes")
     grab_remotes
   ;;
+  "generate_network")
+    generate_network
+  ;;
   "scratch")
     remove_stack
     clean_remotes
@@ -130,26 +174,41 @@ case $1 in
     generate_certs
     copy_certs
     update_dir_perms
+    generate_network
     deploy_stack
+    update_passwords
+    deploy_kibana
   ;;
   *)
   echo "Unknown option"
 cat << EOI
-deploy_stack - Deploy the stack
+Commands in execution order
 
-clean_remotes - clean out the remotes certs directory
+  clean_remotes - clean out the remotes certs directory
 
-create_data_dir - create the data dir on each system
+  create_data_dir - create the data dir on each system
 
-create_certs_dir - create the certs dir on each system
+  create_certs_dir - create the certs dir on each system
 
-copy_certs - copy over the certs to the remotes 
+  compose_configs - Generate docker compose configurations
 
-generate_certs - Generate the certs
+  generate_certs - Generate the certs
 
-compose_configs - Generate docker compose configurations
+  copy_certs - copy over the certs to the remotes 
 
-grab_remotes - get all the remote datafiles
+  update_dir_perms - update the directory permisions on files and directories
+
+  generate_network - generate the elastic overlay network
+
+  deploy_stack - Deploy the elastic stack
+
+  - scratch - will run up to this point.
+  
+  update_passwords - Generate the passwords for this stack (one time success only!!)
+
+  deploy_kibana - Deploy the kibana stack
+
+  grab_remotes - get all the remote datafiles
 
 EOI
   ;;

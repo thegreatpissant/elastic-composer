@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  kib01:
+    image: docker.elastic.co/kibana/kibana:${VERSION}
+    container_name: kib01
+    ports:
+      - 5601:5601
+    environment:
+      SERVERNAME: localhost
+      ELASTICSEARCH_URL: https://es01:9200
+      ELASTICSEARCH_HOSTS: https://es01:9200
+      ELASTICSEARCH_USERNAME: kibana
+      ELASTICSEARCH_PASSWORD: CHANGEME
+      ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: $CERTS_DIR/ca/ca.crt
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_KEY: $CERTS_DIR/kib01/kib01.key
+      SERVER_SSL_CERTIFICATE: $CERTS_DIR/kib01/kib01.crt
+    volumes:
+      - /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME:$CERTS_DIR:Z
+    networks:
+      - elastic
+    deploy:
+      placement:
+        constraints:
+          - "node.hostname==${KIBANA_HOSTNAME}"
+volumes:
+  data01:
+    driver: local
+  data02:
+    driver: local
+  data03:
+    driver: local
+  certs:
+    driver: local
+
+networks:
+  elastic:
+    external: true
