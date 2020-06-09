@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+# set -x
 
 # The run command for this setup
 
@@ -48,7 +48,6 @@ $DOCKER_COMPOSE -f create-certs.yml run --rm create_certs
 copy_certs() {
 # copy certs to other systems
 for i in $SYSTEM_NAMES; do
-  echo "Copying certs to: $i"
   scp -r /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME $i:/$ELASTIC_STACK_NAME/
 done
 }
@@ -56,7 +55,6 @@ done
 update_dir_perms() {
 for i in $SYSTEM_NAMES; do
   DATADIR=/$ELASTIC_STACK_NAME/$i
-  echo "changing selinux labels"
   ssh $i "chcon -Rt svirt_sandbox_file_t /$ELASTIC_STACK_NAME"
   ssh $i "chmod 777 $DATADIR"
 done
@@ -70,7 +68,8 @@ docker stack deploy -c elastic-docker-tls.yml $ELASTIC_STACK_NAME
 deploy_kibana() {
 # deploy kibana stack
 docker stack deploy -c kibana-docker-tls.yml $KIBANA_STACK_NAME
-echo "Kibana deployed, wait 20 seconds for it to come up"
+echo
+echo "Kibana deployed, wait a minute or two for it to come up"
 echo "Try https://$MASTER_NODE_HOSTNAME:5601"
 }
 
@@ -92,10 +91,13 @@ docker network create --driver=overlay --attachable elastic
 }
 
 update_passwords() {
+echo "Updating elastic passwords, you will see error messages here."
+echo "If this goes on for to long ( >1min) , something is wrong."
 #  Update the elastic passwords
+PASSWORD_FILE=$ELASTIC_STACK_NAME-passwords
 GOTPASS=1
 while [ $GOTPASS -ne 0 ]; do
-	docker exec `docker ps | grep es01| awk '{ print $1 }'` /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200" > $ELASTIC_STACK_NAME-passwords
+	docker exec `docker ps | grep es01| awk '{ print $1 }'` /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200" > $PASSWORD_FILE
 	GOTPASS=$?
 	if [ $GOTPASS -ne 0 ]; then
 		echo "Elastic password not changed yet, sleeping and trying again"
@@ -105,10 +107,10 @@ done
 	
 KIBANAPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep kibana | awk '{ print $4 }')
 ELASTICPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep elastic | awk '{ print $4 }')
-
 sed -i s/CHANGEME/$KIBANAPASS/ ./kibana-docker-tls.yml
-echo your kibana login  user:elastic  password:$ELASTICPASS
-
+echo 
+echo Your kibana login  user:elastic  password:$ELASTICPASS
+echo "Generated credentials are saved in $PASSWORD_FILE"
 }
 
 grab_remotes() {
@@ -166,17 +168,29 @@ case $1 in
     generate_network
   ;;
   "scratch")
+echo "##  REMOVING ORIGINAL STACK  ##"
     remove_stack
+echo "##  Cleanining Remote systems  ##"
     clean_remotes
+echo "##  Creating data dirs  ##"
     create_data_dir
+echo "##  Creating cert dirs  ##"
     create_certs_dir
+echo "##  Generating docker compose configurations  ##"
     generate_docker_compose_configs
+echo "##  Generating certificates  ##"
     generate_certs
+echo "##  Copying certs to systems  ##"
     copy_certs
+echo "##  Updating permisions and selinux labels  ##"
     update_dir_perms
+echo "##  Creating docker network  ##"
     generate_network
+echo "##  Deploying elastic stack ##"
     deploy_stack
+echo "##  Generating Passwords, updating kibana config  ##"
     update_passwords
+echo "##  Deploying kibana  ##"
     deploy_kibana
   ;;
   *)
@@ -202,11 +216,11 @@ Commands in execution order
 
   deploy_stack - Deploy the elastic stack
 
-  - scratch - will run up to this point.
-  
   update_passwords - Generate the passwords for this stack (one time success only!!)
 
   deploy_kibana - Deploy the kibana stack
+
+  scratch - will run all previous commands, setting up the full system
 
   grab_remotes - get all the remote datafiles
 

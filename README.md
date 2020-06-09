@@ -1,3 +1,23 @@
+This will deploy a cluster of three elastic nodes and a kibana to a docker swarm system.
+
+Each container is pinned to a different system.
+
+Instructions:
+
+- Setup a docker swarm of 4 systems.
+
+- Define one of the nodes as the master
+
+- Ensure the master has root ssh key access to all other nodes in swarm
+
+- This has only been tested with each swarm node being hostname resolvable.
+- Set variables in the .env file
+- rc.sh will print out each step that is taken to deploy, so you can test each step separately at first.
+- Or, run './rc.sh scratch' to deploy
+
+
+# Notes that are left for reference
+
 stack name is prepended to the volumes.
 
 * Generate the create-certs-full.yml config file
