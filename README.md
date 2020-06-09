@@ -51,3 +51,6 @@ Replace the 'kib01' service's 'ELASTIC_PASSWORD' value to the 'PASSWORD kibana' 
 Use user:elastic, password:'<PASSWORD elastic from above>' When loging into the kibana interface.
 
 Instructions from https://www.elastic.co/guide/en/elastic-stack-get-started/current/get-started-docker.html#:~:text=elastic%2Ddocker%2Dtls.,distributed%20deployment%20with%20multiple%20hosts.
+
+docker exec `docker ps | grep es01| awk '{ print $1 }'` /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200"
+docker stack deploy -c elastic-docker-tls.yml jlastic

@@ -16,7 +16,6 @@ for i in $SYSTEM_NAMES; do
 DATADIR=/$ELASTIC_STACK_NAME/$i
 ssh $i "mkdir -p $DATADIR"
 ssh $i "chmod 777 $DATADIR"
-ssh $i "chcon -Rt svirt_sandbox_file_t $DATADIR"
 done
 }
 
@@ -27,6 +26,11 @@ for i in $SYSTEM_NAMES; do
 ssh $i "mkdir -p $CERTSDIR"
 ssh $i "chcon -Rt svirt_sandbox_file_t $CERTSDIR"
 done
+}
+
+create_dirs() {
+create_certs_dir
+create_data_dir
 }
 
 generate_docker_compose_configs() {
@@ -45,8 +49,15 @@ copy_certs() {
 for i in $SYSTEM_NAMES; do
   echo "Copying certs to: $i"
   scp -r /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME $i:/$ELASTIC_STACK_NAME/
+done
+}
+
+update_dir_perms() {
+for i in $SYSTEM_NAMES; do
+  DATADIR=/$ELASTIC_STACK_NAME/$i
   echo "changing selinux labels"
   ssh $i "chcon -Rt svirt_sandbox_file_t /$ELASTIC_STACK_NAME"
+  ssh $i "chmod 777 $DATADIR"
 done
 }
 
@@ -94,6 +105,9 @@ case $1 in
   "create_certs_dir")
     create_certs_dir
   ;;
+  "update_dir_perms")
+    update_dir_perms
+  ;;
   "copy_certs")
     create_certs_dir
     copy_certs
@@ -115,6 +129,7 @@ case $1 in
     generate_docker_compose_configs
     generate_certs
     copy_certs
+    update_dir_perms
     deploy_stack
   ;;
   *)
