@@ -130,6 +130,9 @@ docker network rm elastic
 }
 
 case $1 in
+  "remove_stack")
+    remove_stack
+  ;;
   "deploy_stack")
     deploy_stack
   ;;
@@ -197,6 +200,8 @@ echo "##  Deploying kibana  ##"
   echo "Unknown option"
 cat << EOI
 Commands in execution order
+
+  remove_stack - remove the stack's and elastic overlay network
 
   clean_remotes - clean out the remotes certs directory
 
