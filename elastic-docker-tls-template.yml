@@ -27,8 +27,8 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - /$ELASTIC_STACK_NAME/$ELASTIC1_HOSTNAME:/usr/share/elasticsearch/data:Z
-      - /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME:$CERTS_DIR:Z
+      - /$ELASTIC_STACK_NAME/$ELASTIC1_HOSTNAME:/usr/share/elasticsearch/data:z
+      - /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME:$CERTS_DIR:z
     ports:
       - 9200:9200
     networks:
@@ -69,8 +69,8 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - /$ELASTIC_STACK_NAME/$ELASTIC2_HOSTNAME:/usr/share/elasticsearch/data:Z
-      - /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME:$CERTS_DIR:Z
+      - /$ELASTIC_STACK_NAME/$ELASTIC2_HOSTNAME:/usr/share/elasticsearch/data:z
+      - /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME:$CERTS_DIR:z
     networks:
       - elastic
     deploy:
@@ -103,8 +103,8 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - /$ELASTIC_STACK_NAME/$ELASTIC3_HOSTNAME:/usr/share/elasticsearch/data:Z
-      - /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME:$CERTS_DIR:Z
+      - /$ELASTIC_STACK_NAME/$ELASTIC3_HOSTNAME:/usr/share/elasticsearch/data:z
+      - /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME:$CERTS_DIR:z
     networks:
       - elastic
     deploy:

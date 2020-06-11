@@ -17,8 +17,8 @@ services:
     env_file:
       - ./.env
     volumes:
-      - /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME:/certs:Z
-      - .:/usr/share/elasticsearch/config/certificates:Z
+      - /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME:/certs:z
+      - .:/usr/share/elasticsearch/config/certificates:z
     networks:
       - elastic
     deploy:

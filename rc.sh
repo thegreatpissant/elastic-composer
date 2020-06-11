@@ -56,6 +56,7 @@ update_dir_perms() {
 for i in $SYSTEM_NAMES; do
   DATADIR=/$ELASTIC_STACK_NAME/$i
   ssh $i "chcon -Rt svirt_sandbox_file_t /$ELASTIC_STACK_NAME"
+  ssh $i "chown -R root:root /$ELASTIC_STACK_NAME"
   ssh $i "chmod 777 $DATADIR"
 done
 }
@@ -108,9 +109,11 @@ done
 KIBANAPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep kibana | awk '{ print $4 }')
 ELASTICPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep elastic | awk '{ print $4 }')
 sed -i s/CHANGEME/$KIBANAPASS/ ./kibana-docker-tls.yml
-echo 
-echo Your kibana login  user:elastic  password:$ELASTICPASS
-echo "Generated credentials are saved in $PASSWORD_FILE"
+echo "##########################################################"
+echo "#################    KIBANA LOGIN     ####################"
+echo "#####      user:elastic  password:$ELASTICPASS       #####"
+echo "### Generated credentials are saved in $PASSWORD_FILE  ###"
+echo "##########################################################"
 }
 
 grab_remotes() {
