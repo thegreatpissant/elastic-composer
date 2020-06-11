@@ -11,9 +11,63 @@ Instructions:
 - Ensure the master has root ssh key access to all other nodes in swarm
 
 - This has only been tested with each swarm node being hostname resolvable.
+
 - Set variables in the .env file
-- rc.sh will print out each step that is taken to deploy, so you can test each step separately at first.
+
+- './rc.sh' will print out each step that is taken to deploy, so you can test each step separately at first.
+
 - Or, run './rc.sh scratch' to deploy
+
+- Will present the elastic user and password for kibana.
+
+# Node setups
+
+Tested on Centos7.x
+
+Each node needs the following in */etc/sysctl.conf*
+
+`vm.max_map_count=262144`
+
+Grab docker compose
+
+`curl -L "https://github.com/docker/compose/releases/download/1.26.0/docker-compose-$(uname -s)-$(uname -m)" -o docker-compose`
+
+update paths and hostnames in *.env* file.
+
+# This example
+
+4 nodes
+
+elastic-1:
+- master of the docker swarm
+- master of the elastic cluster
+- has keyexchange enabled ssh access to all other nodes via root user.
+
+elastic-2:
+- second elastic cluster node
+
+elastic-3:
+- third elastic cluster node
+
+kibana:
+- kibana node
+
+
+# References
+
+Docker compose:
+https://docs.docker.com/compose/install/
+
+Elastic search with docker and docker compose
+https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
+
+Docker Compose
+https://docs.docker.com/compose/install/
+
+Selinux Setup
+https://www.projectatomic.io/blog/2015/06/using-volumes-with-docker-can-cause-problems-with-selinux/
+
+
 
 
 # Notes that are left for reference
