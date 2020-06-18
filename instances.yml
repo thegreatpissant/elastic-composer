@@ -2,6 +2,7 @@ instances:
   - name: es01
     dns:
       - es01
+      - elastic-1
       - localhost
     ip:
       - 127.0.0.1
@@ -9,6 +10,7 @@ instances:
   - name: es02
     dns:
       - es02
+      - elastic-2
       - localhost
     ip:
       - 127.0.0.1
@@ -16,6 +18,7 @@ instances:
   - name: es03
     dns:
       - es03
+      - elastic-3
       - localhost
     ip:
       - 127.0.0.1

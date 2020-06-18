@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  log01:
+    image: docker.elastic.co/logstash/logstash:${VERSION}
+    container_name: log01
+    ports:
+      - 5514:5514/udp
+    environment:
+      PIPELINE_ORDERED: auto
+      XPACK_MONITORING_ENABLED: "true"
+      XPACK_MONITORING_ELASTICSEARCH_USERNAME: elastic
+      XPACK_MONITORING_ELASTICSEARCH_PASSWORD: CHANGEME_ELASTIC_PASSWORD
+      XPACK_MONITORING_ELASTICSEARCH_HOSTS: '["https://es01:9200","https://es02:9200","https://es03:9200"]'
+      XPACK_MONITORING_ELASTICSEARCH_SSL_CERTIFICATE_AUTHORITY: $CERTS_DIR/ca/ca.crt
+      XPACK_MANAGEMENT_ENABLED: "true"
+      XPACK_MANAGEMENT_PIPELINE_ID: '["main"]'
+      XPACK_MANAGEMENT_ELASTICSEARCH_USERNAME: elastic
+      XPACK_MANAGEMENT_ELASTICSEARCH_PASSWORD: CHANGEME_ELASTIC_PASSWORD
+      XPACK_MANAGEMENT_ELASTICSEARCH_HOSTS: '["https://es01:9200","https://es02:9200","https://es03:9200"]'
+      XPACK_MANAGEMENT_ELASTICSEARCH_SSL_CERTIFICATE_AUTHORITY: $CERTS_DIR/ca/ca.crt
+      PIPELINE_ID: main
+      PIPELINE_WORKERS: 4
+      PIPELINE_BATCH_SIZE: 1
+    volumes:
+      - /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME:$CERTS_DIR:z
+    networks:
+      - elastic
+    deploy:
+      placement:
+        constraints:
+          - "node.hostname==${LOGSTASH_HOSTNAME}"
+volumes:
+  certs:
+    driver: local
+
+networks:
+  elastic:
+    external: true

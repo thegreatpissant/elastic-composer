@@ -1,22 +1,66 @@
-This will deploy a cluster of three elastic nodes and a kibana to a set of system in a docker swarm configuration.
+This will deploy a cluster of three elastic nodes a kibana and a logstash to a set of system in a docker swarm configuration.  It was originally based on the elastic docker compose files and other references cited below.
 
-Each container is pinned to a different system.
+*This version exposes passwords in the **env** of each docker container.  Working on moving this to a more secure option.*
 
 Instructions:
 
-- Setup a docker swarm of 4 systems.
+- Identify 5 nodes for the deployment. *I setup a single image that can ssh key exchange with itself and then make a copy of that vm for each node.*
 
-- Define one of the nodes as the master
+- Define one of the nodes as the docker swarm master, maybe elastic-1
 
-- Ensure the master has root ssh key access to all other nodes in swarm
+- Setup a docker swarm of 5 systems.
+	- elastic-1
+	- elastic-2
+	- elastic-3
+	- kibana
+	- logstash
 
-- This has only been tested with each swarm node being hostname resolvable.
+- Ensure the swarm master has root ssh key access to all other nodes in swarm
+
 - Set variables in the .env file
-- rc.sh will print out each step that is taken to deploy, so you can test each step separately at first.
-- Or, run './rc.sh scratch' to deploy
+```
+# .env file example
+COMPOSE_PROJECT_NAME=es
+#  Directory in the containers that will contain certificates
+CERTS_DIR=/usr/share/elasticsearch/config/certificates
+#  Version of docker images to use
+VERSION=7.7.0
+#  Master Swarm node name this script is run on, used when running the create_certs containers
+MASTER_NODE_HOSTNAME=elastic-1
+#  Define the swarm hostnames
+ELASTIC1_HOSTNAME=elastic-1
+ELASTIC2_HOSTNAME=elastic-2
+ELASTIC3_HOSTNAME=elastic-3
+KIBANA_HOSTNAME=kibana
+LOGSTASH_HOSTNAME=logstash
+#  Define the stack names
+ELASTIC_STACK_NAME=jlastic
+KIBANA_STACK_NAME=jlastic-kibana
+LOGSTASH_STACK_NAME=jlastic-logstash
+CERTS_STACK_NAME=certstack
+#  Docker volume certificate subdirectory name, will be under the $ELASTIC_STACK_NAME directory
+CERTS_VOLUME_NAME=certstack_certs
+```
+
+- Running `rc.sh` will print out each step that is taken to deploy, so you can test each step separately at first.
+- Or, run './rc.sh scratch' to run through the whole cleanup and deployment.  Rerunning './rc.sh scratch' will remove all the original data so make sure thats what you want to do.
+- `./rc.sh grab-remotes` will grab the remote system data and copy it locally, but make sure you have room for it.
+- `./rc.sh` will show you the information required to login to kibana after the process completes.
+- Port `9200` will be exposed to all nodes for beat integration
 
 
-# Notes that are left for reference
+## Integrating pfsense firewall logs
+
+- Setup the nodes as defined above.
+
+- Setup your pfsense firewall logging as per https://github.com/thegreatpissant/logstockpile/blob/master/README.md
+
+- Setup the logstash `main` pipeline; *Management->Logstash->Pipelines->Create pipeline*
+  -  Enter "**main**" as the `Pipeline ID` and paste the contents of the pipeline configuration at https://raw.githubusercontent.com/thegreatpissant/logstockpile/master/pfsense.conf
+  - In the **output** section of the pasted pipeline, uncomment and update the elastic-composer fields with your information for **user:elastic** and the **password** that was supplied when you setup the stack.
+
+
+## Random Notes that are left for reference
 
 stack name is prepended to the volumes.
 
@@ -47,7 +91,7 @@ run the swarm
 docker exec <es01-container-id> /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200"
 
 ## For example 
-`
+```
 docker exec es01 /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200"
 
 Changed password for user apm_system
@@ -67,7 +111,7 @@ PASSWORD remote_monitoring_user = UbUEVMXu1CYV67GBHp1g
 
 Changed password for user elastic
 PASSWORD elastic = fizCbXxNPjN5By0qG7d6
-`
+```
 
 Replace the 'kib01' service's 'ELASTIC_PASSWORD' value to the 'PASSWORD kibana' Field In the docker compose template "elastic-docker-tls.yml", that file was generated during setup.
 

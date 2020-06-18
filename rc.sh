@@ -8,7 +8,7 @@
 . .env
 
 DOCKER_COMPOSE=/usr/local/bin/docker-compose
-SYSTEM_NAMES="$ELASTIC1_HOSTNAME $ELASTIC2_HOSTNAME $ELASTIC3_HOSTNAME $KIBANA_HOSTNAME"
+SYSTEM_NAMES="$ELASTIC1_HOSTNAME $ELASTIC2_HOSTNAME $ELASTIC3_HOSTNAME $KIBANA_HOSTNAME $LOGSTASH_HOSTNAME"
 
 create_data_dir() {
 # Create the data dirs on each host
@@ -38,6 +38,7 @@ generate_docker_compose_configs() {
 $DOCKER_COMPOSE -f create-certs-template.yml config > create-certs.yml
 $DOCKER_COMPOSE -f elastic-docker-tls-template.yml config > elastic-docker-tls.yml
 $DOCKER_COMPOSE -f kibana-docker-tls-template.yml config > kibana-docker-tls.yml
+$DOCKER_COMPOSE -f logstash-docker-tls-template.yml config > logstash-docker-tls.yml
 }
 
 generate_certs() {
@@ -74,6 +75,13 @@ echo "Kibana deployed, wait a minute or two for it to come up"
 echo "Try https://$MASTER_NODE_HOSTNAME:5601"
 }
 
+deploy_logstash() {
+# deploy logstash stack
+docker stack deploy -c logstash-docker-tls.yml $LOGSTASH_STACK_NAME
+echo
+echo "logstash deployed"
+}
+
 clean_remotes() {
 # Remove the remote elastic swarm directories.
 if [ -z $ELASTIC_STACK_NAME ]; then
@@ -106,9 +114,14 @@ while [ $GOTPASS -ne 0 ]; do
 	fi
 done
 	
+#  Grab the passwords 
 KIBANAPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep kibana | awk '{ print $4 }')
 ELASTICPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep elastic | awk '{ print $4 }')
+# Update templates with the generated passwords.
 sed -i s/CHANGEME/$KIBANAPASS/ ./kibana-docker-tls.yml
+sed -i s/CHANGEME_ELASTIC_PASSWORD/$ELASTICPASS/ ./logstash-docker-tls.yml
+
+#  Print out info to the user.
 echo "##########################################################"
 echo "#################    KIBANA LOGIN     ####################"
 echo "#####      user:elastic  password:$ELASTICPASS       #####"
@@ -129,6 +142,7 @@ remove_stack() {
 # Stop the stack and remove it
 docker stack rm $ELASTIC_STACK_NAME
 docker stack rm $KIBANA_STACK_NAME
+docker stack rm $LOGSTASH_STACK_NAME
 docker network rm elastic
 }
 
@@ -141,6 +155,9 @@ case $1 in
   ;;
   "deploy_kibana")
     deploy_kibana
+  ;;
+  "deploy_logstash")
+    deploy_logstash
   ;;
   "update_passwords")
     update_passwords
@@ -198,6 +215,8 @@ echo "##  Generating Passwords, updating kibana config  ##"
     update_passwords
 echo "##  Deploying kibana  ##"
     deploy_kibana
+echo "##  Deploying logstash ##"
+    deploy_logstash
   ;;
   *)
   echo "Unknown option"
@@ -226,7 +245,9 @@ Commands in execution order
 
   update_passwords - Generate the passwords for this stack (one time success only!!)
 
-  deploy_kibana - Deploy the kibana stack
+  deploy_kibana - Deploy the kibana docker stack
+
+  deploy_logstash - Deploy the logstash docker stack
 
   scratch - will run all previous commands, setting up the full system
 
