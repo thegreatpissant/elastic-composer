@@ -1,4 +1,8 @@
-This will deploy a cluster of three elastic nodes a kibana and a logstash to a set of system in a docker swarm configuration.  It was originally based on the elastic docker compose files and other references cited below.
+This will deploy a xpack security enabled cluster of three elastic nodes, kibana, and logstash, to a set of systems in a docker swarm configuration.  It was originally based on the elastic docker compose files and other references cited below.
+
+I use this to deploy a test system on my home network and collect logs off my pfsense system (I highly recommend you do the same!!).  Instructions are included for that setup.
+
+
 
 *This version exposes passwords in the **env** of each docker container.  Working on moving this to a more secure option.*
 
@@ -62,7 +66,7 @@ CERTS_VOLUME_NAME=certstack_certs
 
 ## Random Notes that are left for reference
 
-stack name is prepended to the volumes.
+stack name is perpended to the volumes.
 
 Generate the create-certs-full.yml config file
 
