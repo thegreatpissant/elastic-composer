@@ -49,8 +49,9 @@ CERTS_VOLUME_NAME=certstack_certs
 - Running `rc.sh` will print out each step that is taken to deploy, so you can test each step separately at first.
 - Or, run './rc.sh scratch' to run through the whole cleanup and deployment.  Rerunning './rc.sh scratch' will remove all the original data so make sure thats what you want to do.
 - `./rc.sh grab-remotes` will grab the remote system data and copy it locally, but make sure you have room for it.
-- `./rc.sh` will show you the information required to login to kibana after the process completes.
-- Port `9200` will be exposed to all nodes for beat integration
+- Running `./rc.sh scratch` will show you the information required to login to kibana.
+- Port `9200/tcp` will be exposed to all nodes for beat integration
+- Port `5514/udp` will be exposed for the pfsense firewall log setup below.
 
 
 ## Integrating pfsense firewall logs
