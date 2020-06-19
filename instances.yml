@@ -26,4 +26,5 @@ instances:
   - name: 'kib01'
     dns:
       - kib01
+      - kibana
       - localhost
