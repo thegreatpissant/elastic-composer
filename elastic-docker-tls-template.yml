@@ -3,7 +3,7 @@ version: '3'
 services:
   es01:
     image: docker.elastic.co/elasticsearch/elasticsearch:${VERSION}
-    container_name: es01
+    #container_name: es01
     environment:
       - node.name=es01
       - cluster.name=es-docker-cluster
@@ -45,7 +45,7 @@ services:
 
   es02:
     image: docker.elastic.co/elasticsearch/elasticsearch:${VERSION}
-    container_name: es02
+    #container_name: es02
     environment:
       - node.name=es02
       - cluster.name=es-docker-cluster
@@ -79,7 +79,7 @@ services:
           - "node.hostname==$ELASTIC2_HOSTNAME"
   es03:
     image: docker.elastic.co/elasticsearch/elasticsearch:${VERSION}
-    container_name: es03
+    #container_name: es03
     environment:
       - node.name=es03
       - cluster.name=es-docker-cluster
