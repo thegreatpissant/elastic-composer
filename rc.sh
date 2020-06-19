@@ -116,8 +116,8 @@ done
 echo "Setting passwords in docker files"
 	
 #  Grab the passwords 
-KIBANAPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep kibana | awk '{ print $4 }')
-ELASTICPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep elastic | awk '{ print $4 }')
+KIBANAPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep 'kibana =' | awk '{ print $4 }')
+ELASTICPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep 'elastic =' | awk '{ print $4 }')
 # Update templates with the generated passwords.
 sed -i s/CHANGEME/$KIBANAPASS/ ./kibana-docker-tls.yml
 sed -i s/CHANGEME_ELASTIC_PASSWORD/$ELASTICPASS/ ./logstash-docker-tls.yml
