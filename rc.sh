@@ -15,8 +15,8 @@ create_data_dir() {
 	for i in $SYSTEM_NAMES; do
 		echo "System name: $i"
 		DATADIR=/$ELASTIC_STACK_NAME/$i
-		ssh $i "mkdir -p $DATADIR"
-		ssh $i "chmod 777 $DATADIR"
+		ssh "$i" "mkdir -p $DATADIR"
+		ssh "$i" "chmod 777 $DATADIR"
 	done
 }
 
@@ -25,8 +25,8 @@ create_certs_dir() {
 	CERTSDIR=/$ELASTIC_STACK_NAME/$CERTS_VOLUME_LOCATION
 	for i in $SYSTEM_NAMES; do
 		echo "System name: $i"
-		ssh $i "mkdir -p $CERTSDIR"
-		ssh $i "chcon -Rt svirt_sandbox_file_t $CERTSDIR"
+		ssh "$i" "mkdir -p $CERTSDIR"
+		ssh "$i" "chcon -Rt svirt_sandbox_file_t $CERTSDIR"
 	done
 }
 
@@ -52,7 +52,7 @@ copy_certs() {
 	# copy certs to other systems
 	for i in $SYSTEM_NAMES; do
 		echo "System name: $i"
-		scp -r /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME $i:/$ELASTIC_STACK_NAME/
+		scp -r /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME "$i":/$ELASTIC_STACK_NAME/
 	done
 }
 
@@ -60,9 +60,9 @@ update_dir_perms() {
 	for i in $SYSTEM_NAMES; do
 		echo "System name: $i"
 		DATADIR=/$ELASTIC_STACK_NAME/$i
-		ssh $i "chcon -Rt svirt_sandbox_file_t /$ELASTIC_STACK_NAME"
-		ssh $i "chown -R root:root /$ELASTIC_STACK_NAME"
-		ssh $i "chmod 777 $DATADIR"
+		ssh "$i" "chcon -Rt svirt_sandbox_file_t /$ELASTIC_STACK_NAME"
+		ssh "$i" "chown -R root:root /$ELASTIC_STACK_NAME"
+		ssh "$i" "chmod 777 $DATADIR"
 	done
 }
 
@@ -95,7 +95,7 @@ clean_remotes() {
 	fi
 	for i in $SYSTEM_NAMES; do
 		echo "System name: $i"
-		ssh $i "rm -fr /$ELASTIC_STACK_NAME"
+		ssh "$i" "rm -fr /$ELASTIC_STACK_NAME"
 	done
 }
 
@@ -109,7 +109,7 @@ update_passwords() {
 	echo "If this goes on for to long ( >1min) , something is wrong."
 	#  Update the elastic passwords
 	PASSWORD_FILE=$ELASTIC_STACK_NAME-passwords
-	until docker exec `docker ps | grep es01| awk '{ print $1 }'` /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200" > $PASSWORD_FILE 2>/dev/null; do
+	until docker exec "$(docker ps | grep es01| awk '{ print $1 }')" /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200" > $PASSWORD_FILE 2>/dev/null; do
 		echo "Elastic Password not changed yet, sleeping and trying again"
 	done
 
@@ -119,8 +119,8 @@ update_passwords() {
   KIBANAPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep 'kibana =' | awk '{ print $4 }')
   ELASTICPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep 'elastic =' | awk '{ print $4 }')
   # Update templates with the generated passwords.
-  sed -i s/CHANGEME/$KIBANAPASS/ ./kibana-docker-tls.yml
-  sed -i s/CHANGEME_ELASTIC_PASSWORD/$ELASTICPASS/ ./logstash-docker-tls.yml
+  sed -i s/CHANGEME/"$KIBANAPASS"/ ./kibana-docker-tls.yml
+  sed -i s/CHANGEME_ELASTIC_PASSWORD/"$ELASTICPASS"/ ./logstash-docker-tls.yml
 
   echo 
   echo "## User information ##"
@@ -133,19 +133,19 @@ update_passwords() {
 
 grab_remotes() {
 	# Get the data directories of the remote elastic swarm directories
-	DATADIR=data_`date +"%s"`
+	DATADIR=data_$(date +"%s")
 	for i in $SYSTEM_NAMES; do
 		echo "System name: $i"
-		mkdir -p $DATADIR/$i
-		scp -r $i:/$ELASTIC_STACK_NAME ./$DATADIR/$i/ 
+		mkdir -p "$DATADIR"/"$i"
+		scp -r "$i":/"$ELASTIC_STACK_NAME" ./"$DATADIR"/"$i"/ 
 	done
 }
 
 remove_stack() {
 	# Stop the stack and remove it
-	docker stack rm $ELASTIC_STACK_NAME
-	docker stack rm $KIBANA_STACK_NAME
-	docker stack rm $LOGSTASH_STACK_NAME
+	docker stack rm "$ELASTIC_STACK_NAME"
+	docker stack rm "$KIBANA_STACK_NAME"
+	docker stack rm "$LOGSTASH_STACK_NAME"
 	docker network rm elastic
 }
 
