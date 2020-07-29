@@ -2,4 +2,5 @@
 create-certs.yml
 elastic-docker-tls.yml
 kibana-docker-tls.yml
+logstash-docker-tls.yml
 *passwords

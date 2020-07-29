@@ -3,28 +3,37 @@ instances:
     dns:
       - es01
       - elastic-1
+      - elastic-1.jdnet.lan
       - localhost
     ip:
       - 127.0.0.1
+      - 10.0.1.61
 
   - name: es02
     dns:
       - es02
       - elastic-2
+      - elastic-2.jdnet.lan
       - localhost
     ip:
       - 127.0.0.1
+      - 10.0.1.62
 
   - name: es03
     dns:
       - es03
       - elastic-3
+      - elastic-3.jdnet.lan
       - localhost
     ip:
       - 127.0.0.1
+      - 10.0.1.63
 
   - name: 'kib01'
     dns:
       - kib01
       - kibana
+      - kibana.jdnet.lan
       - localhost
+    ip:
+      - 10.0.1.64

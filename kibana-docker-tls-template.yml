@@ -8,7 +8,6 @@ services:
       - 5601:5601
     environment:
       SERVERNAME: localhost
-      ELASTICSEARCH_URL: https://es01:9200
       ELASTICSEARCH_HOSTS: '["https://es01:9200","https://es02:9200","https://es03:9200"]'
       ELASTICSEARCH_USERNAME: kibana
       ELASTICSEARCH_PASSWORD: CHANGEME
@@ -16,6 +15,7 @@ services:
       SERVER_SSL_ENABLED: "true"
       SERVER_SSL_KEY: $CERTS_DIR/kib01/kib01.key
       SERVER_SSL_CERTIFICATE: $CERTS_DIR/kib01/kib01.crt
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: CHANGEMECHANGEME
     volumes:
       - /$ELASTIC_STACK_NAME/$CERTS_VOLUME_NAME:$CERTS_DIR:z
     networks:

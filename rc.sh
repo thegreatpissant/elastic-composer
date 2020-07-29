@@ -101,25 +101,30 @@ clean_remotes() {
 
 generate_network() {
 	#  Create the overlay network used by stack and kibana
-	docker network create --driver=overlay --attachable elastic
+	docker network create --driver=overlay --attachable --subnet="$DOCKER_NETWORK_SUBNET" --gateway="$DOCKER_NETWORK_GATEWAY" elastic
 }
 
-update_passwords() {
+generate_passwords() {
 	echo "Updating elastic passwords"
 	echo "If this goes on for to long ( >1min) , something is wrong."
 	#  Update the elastic passwords
 	PASSWORD_FILE=$ELASTIC_STACK_NAME-passwords
 	until docker exec "$(docker ps | grep es01| awk '{ print $1 }')" /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200" > $PASSWORD_FILE 2>/dev/null; do
 		echo "Elastic Password not changed yet, sleeping and trying again"
+		sleep 1
 	done
 
 	echo "Setting passwords in docker files"
 
+}
+
+update_passwords() {
   #  Grab the passwords 
-  KIBANAPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep 'kibana =' | awk '{ print $4 }')
-  ELASTICPASS=$(grep PASSWORD $ELASTIC_STACK_NAME-passwords | grep 'elastic =' | awk '{ print $4 }')
+  PASSWORD_FILE=$ELASTIC_STACK_NAME-passwords
+  KIBANAPASS=$(grep PASSWORD $PASSWORD_FILE | grep 'kibana =' | awk '{ print $4 }')
+  ELASTICPASS=$(grep PASSWORD $PASSWORD_FILE | grep 'elastic =' | awk '{ print $4 }')
   # Update templates with the generated passwords.
-  sed -i s/CHANGEME/"$KIBANAPASS"/ ./kibana-docker-tls.yml
+  sed -i s/CHANGEME/"$KIBANAPASS"/g ./kibana-docker-tls.yml
   sed -i s/CHANGEME_ELASTIC_PASSWORD/"$ELASTICPASS"/ ./logstash-docker-tls.yml
 
   echo 
@@ -162,6 +167,9 @@ case $1 in
 		;;
 	"deploy_logstash")
 		deploy_logstash
+		;;
+	"generate_passwords")
+		generate_passwords
 		;;
 	"update_passwords")
 		update_passwords
@@ -236,7 +244,11 @@ case $1 in
 		deploy_stack
 
 		echo
-		echo "##  Generating Passwords, updating kibana config  ##"
+		echo "##  Generating Passwords  ##"
+		generate_passwords
+
+		echo
+		echo "##  Updating Passwords  ##"
 		update_passwords
 
 		echo
@@ -272,7 +284,9 @@ Setup and Deployment Commands in execution order
 
   deploy_stack - Deploy the elastic stack
 
-  update_passwords - Generate the passwords for this stack (one time success only!!)
+  generate_passwords - Generate the passwords for this stack (one time success only!!)
+
+  update_passwords - Update the config files for this stack (one time success only!!)
 
   deploy_kibana - Deploy the kibana docker stack
 
