@@ -1,4 +1,4 @@
-This will deploy a xpack security enabled cluster of three elastic nodes, kibana, and logstash, to a set of systems in a docker swarm configuration.  It was originally based on the elastic docker compose files and other references cited below.
+This will deploy a xpack security enabled cluster of three Elasticsearch nodes, Kibana, and Logstash, to a set of systems in a docker swarm configuration.  It was originally based on the elastic docker compose files and other references cited below.
 
 I use this to deploy a test system on my home network and collect logs off my pfsense system (I highly recommend you do the same!!).  Instructions are included for that setup.
 
@@ -44,6 +44,10 @@ LOGSTASH_STACK_NAME=jlastic-logstash
 CERTS_STACK_NAME=certstack
 #  Docker volume certificate subdirectory name, will be under the $ELASTIC_STACK_NAME directory
 CERTS_VOLUME_NAME=certstack_certs
+#  Define the Docker swarm network Paramaters.  Keep in mind that swarm containers can reach outside the network they are on.
+#  Yes, these values are from the docker docs. https://docs.docker.com/network/overlay/
+DOCKER_NETWORK_SUBNET=10.11.0.0/16
+DOCKER_NETWORK_GATEWAY=10.11.0.2
 ```
 
 - Running `rc.sh` will print out each step that is taken to deploy, so you can test each step separately at first.
@@ -60,9 +64,37 @@ CERTS_VOLUME_NAME=certstack_certs
 
 - Setup your pfsense firewall logging as per https://github.com/thegreatpissant/logstockpile/blob/master/README.md
 
-- Setup the logstash `main` pipeline; *Management->Logstash->Pipelines->Create pipeline*
+- Setup the Logstash `main` pipeline; *Management->Logstash->Pipelines->Create pipeline*
   -  Enter "**main**" as the `Pipeline ID` and paste the contents of the pipeline configuration at https://raw.githubusercontent.com/thegreatpissant/logstockpile/master/pfsense.conf
   - In the **output** section of the pasted pipeline, uncomment and update the elastic-composer fields with your information for **user:elastic** and the **password** that was supplied when you setup the stack.
+
+## Integrating Beats
+
+When setting up your beat products you will have three exposed elastic nodes that can have data sent to them.
+
+Add the generated CA to your systems CA store.
+
+The supplied `.env` file has three hosts that are the host names of the nodes in your swarm.  These hosts will expose their Elasticsearch instance on a unique port number from the others.  In this example `ELASTIC1_HOSTNAME`, `ELASTIC2_HOSTNAME`, and `ELASTIC3_HOSTNAME` as defined in the `.env` file will will be assigned the port number `9200, 9201, 9202` respectively.  Here is an example of the `Elasticsearch output` section to use.
+
+```
+#-------------------------- Elasticsearch output ------------------------------
+output.elasticsearch:
+  # Array of hosts to connect to.
+  hosts: ["elastic-1.jdnet.lan:9200","elastic-2.jdnet.lan:9201","elastic-3.jdnet.lan:9202"]
+  ssl.certificate_authorities: ["/etc/pki/jlastic/ca/ca.crt"]
+
+  # Protocol - either `http` (default) or `https`.
+  protocol: "https"
+
+  # Authentication credentials - either API key or username/password.
+  #api_key: "id:api_key"
+  username: "elastic"
+  password: "WYAtO5wlpqcD937UySyX"
+```
+
+Why the different port numbers?  Because, from what I could find all ports from containers in the swarm are available on each node in the swarm.  Exposing each Elasticsearch node as 9200 will cause the `docker stack deploy` command to fail.  All of the containers would request to use the 9200 port.
+
+Why the different host names, could I just point them all to elastic-1.jdnet.lan?  The certificates are generated with the hostname and IP address of each host.  Connecting to elastic-1.jdnet.lan:9201 will redirect you on the swarm network to the es02 container and therefore the cert would be valid for es02, elastic-2.jdnet.lan, elastic-2 but not elastic-1.jdnet.lan.
 
 
 ## Random Notes that are left for reference
@@ -90,7 +122,7 @@ push out to the other systems via scp
 run the swarm
 
 
-## Generating the kibana password and elastic user login.
+## Generating the Kibana password and elastic user login.
 
 ## This command will generate the password on the elastic node.
 docker exec <es01-container-id> /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://es01:9200"
